@@ -38,6 +38,7 @@ import ai.verta.modeldb.entities.environment.EnvironmentVariablesEntity;
 import ai.verta.modeldb.entities.environment.PythonEnvironmentBlobEntity;
 import ai.verta.modeldb.entities.environment.PythonEnvironmentRequirementBlobEntity;
 import ai.verta.modeldb.entities.metadata.LabelsMappingEntity;
+import ai.verta.modeldb.entities.versioning.BranchEntity;
 import ai.verta.modeldb.entities.versioning.CommitEntity;
 import ai.verta.modeldb.entities.versioning.InternalFolderElementEntity;
 import ai.verta.modeldb.entities.versioning.RepositoryEntity;
@@ -136,6 +137,7 @@ public class ModelDBHibernateUtil {
     EnvironmentVariablesEntity.class,
     GitCodeBlob.class,
     NotebookCodeBlob.class,
+    BranchEntity.class
   };
 
   private ModelDBHibernateUtil() {}
