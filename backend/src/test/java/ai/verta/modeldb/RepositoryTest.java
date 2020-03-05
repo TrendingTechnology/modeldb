@@ -62,7 +62,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -168,13 +167,7 @@ public class RepositoryTest {
     }
   }
 
-  @Test
-  public void repositoryTest() {
-    LOGGER.info("Create and delete repository test start................................");
-
-    VersioningServiceBlockingStub versioningServiceBlockingStub =
-        VersioningServiceGrpc.newBlockingStub(channel);
-
+  private Long createRepository(VersioningServiceBlockingStub versioningServiceBlockingStub) {
     SetRepository setRepository =
         SetRepository.newBuilder()
             .setId(
@@ -184,9 +177,21 @@ public class RepositoryTest {
             .setRepository(Repository.newBuilder().setName(NAME))
             .build();
     Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    return result.getRepository().getId();
+  }
+
+  private void deleteRepository(long id) {}
+
+  @Test
+  public void repositoryTest() {
+    LOGGER.info("Create and delete repository test start................................");
+
+    VersioningServiceBlockingStub versioningServiceBlockingStub =
+        VersioningServiceGrpc.newBlockingStub(channel);
+
+    long id = createRepository(versioningServiceBlockingStub);
     try {
-      setRepository =
+      SetRepository setRepository =
           SetRepository.newBuilder()
               .setId(
                   RepositoryIdentification.newBuilder()
@@ -214,7 +219,7 @@ public class RepositoryTest {
         versioningServiceBlockingStub.getRepository(getRepositoryRequest);
     Assert.assertTrue(getByIdResult.hasRepository());
 
-    setRepository =
+    SetRepository setRepository =
         SetRepository.newBuilder()
             .setId(
                 RepositoryIdentification.newBuilder()
@@ -222,7 +227,7 @@ public class RepositoryTest {
                     .build())
             .setRepository(Repository.newBuilder().setName(NAME_2))
             .build();
-    result = versioningServiceBlockingStub.updateRepository(setRepository);
+    SetRepository.Response result = versioningServiceBlockingStub.updateRepository(setRepository);
     Assert.assertTrue(result.hasRepository());
     Assert.assertEquals(NAME_2, result.getRepository().getName());
 
@@ -270,17 +275,15 @@ public class RepositoryTest {
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     CreateCommitRequest createCommitRequest =
         CreateCommitRequest.newBuilder()
@@ -290,6 +293,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(
                 BlobExpanded.newBuilder()
@@ -408,17 +412,15 @@ public class RepositoryTest {
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     String path = "/protos/proto/public/versioning/versioning.proto";
     List<String> location = new ArrayList<>();
@@ -449,6 +451,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(BlobExpanded.newBuilder().setBlob(blob).addAllLocation(location).build())
             .build();
@@ -521,17 +524,15 @@ public class RepositoryTest {
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     String path1 = "/protos/proto/public/versioning/versioning.proto";
     List<String> location1 = new ArrayList<>();
@@ -562,6 +563,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(blobExpanded1)
             .addBlobs(blobExpanded2)
@@ -629,17 +631,14 @@ public class RepositoryTest {
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     String path1 = "/protos/proto/public/versioning/versioning.proto";
     List<String> location1 = new ArrayList<>();
@@ -681,6 +680,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(blobExpanded1)
             .addBlobs(blobExpanded2)
@@ -823,17 +823,14 @@ public class RepositoryTest {
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     String path1 = "/protos/proto/public/versioning/versioning.proto";
     List<String> location1 = new ArrayList<>();
@@ -875,6 +872,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(blobExpanded1)
             .addBlobs(blobExpanded2)
@@ -900,6 +898,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(commitB.getCommitSha())
                     .build())
             .addBlobs(blobExpanded2)
             .addBlobs(blobExpanded3)
@@ -948,17 +947,14 @@ public class RepositoryTest {
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     String path1 = "/protos/proto/public/versioning/versioning.proto";
     List<String> location1 = new ArrayList<>();
@@ -1001,6 +997,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(blobExpanded1)
             .build();
@@ -1075,13 +1072,12 @@ public class RepositoryTest {
             .build();
     versioningServiceBlockingStub.setBranch(setBranchRequest);
 
-    GetBranchRequest getBranchRequest =
+    getBranchRequest =
         GetBranchRequest.newBuilder()
             .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
             .setBranch(branchName1)
             .build();
-    GetBranchRequest.Response getBranchResponse =
-        versioningServiceBlockingStub.getBranch(getBranchRequest);
+    getBranchResponse = versioningServiceBlockingStub.getBranch(getBranchRequest);
     Commit branchRootCommit = getBranchResponse.getCommit();
     Assert.assertEquals(
         "Expected commit not found in the response",
@@ -1096,7 +1092,7 @@ public class RepositoryTest {
         versioningServiceBlockingStub.listBranches(listBranchesRequest);
     Assert.assertEquals(
         "Branches count not match with expected branches count",
-        2,
+        3,
         listBranchesResponse.getBranchesCount());
     Assert.assertTrue(
         "Expected branch name not found in the response",
@@ -1147,24 +1143,20 @@ public class RepositoryTest {
   }
 
   @Test
-  @Ignore // TODO: Remove this after Implementing listBranchCommits endpoint
   public void branchTest() {
     LOGGER.info("branch test start................................");
 
     VersioningServiceBlockingStub versioningServiceBlockingStub =
         VersioningServiceGrpc.newBlockingStub(channel);
 
-    SetRepository setRepository =
-        SetRepository.newBuilder()
-            .setId(
-                RepositoryIdentification.newBuilder()
-                    .setNamedId(
-                        RepositoryNamedIdentification.newBuilder().setName("Repo-1").build())
-                    .build())
-            .setRepository(Repository.newBuilder().setName("Repo-1"))
+    long id = createRepository(versioningServiceBlockingStub);
+    GetBranchRequest getBranchRequest =
+        GetBranchRequest.newBuilder()
+            .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
+            .setBranch(ModelDBConstants.MASTER_BRANCH)
             .build();
-    SetRepository.Response result = versioningServiceBlockingStub.createRepository(setRepository);
-    long id = result.getRepository().getId();
+    GetBranchRequest.Response getBranchResponse =
+        versioningServiceBlockingStub.getBranch(getBranchRequest);
 
     String path1 = "/protos/proto/public/versioning/versioning.proto";
     List<String> location1 = new ArrayList<>();
@@ -1207,6 +1199,7 @@ public class RepositoryTest {
                     .setAuthor(authClientInterceptor.getClient1Email())
                     .setMessage("this is the test commit message")
                     .setDateCreated(Calendar.getInstance().getTimeInMillis())
+                    .addParentShas(getBranchResponse.getCommit().getCommitSha())
                     .build())
             .addBlobs(blobExpanded1)
             .build();
@@ -1268,21 +1261,20 @@ public class RepositoryTest {
         SetBranchRequest.newBuilder()
             .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
             .setBranch(branchName)
-            .setCommitSha(commitShaList.get(0))
+            .setCommitSha(commitShaList.get(3))
             .build();
     versioningServiceBlockingStub.setBranch(setBranchRequest);
 
-    GetBranchRequest getBranchRequest =
+    getBranchRequest =
         GetBranchRequest.newBuilder()
             .setRepositoryId(RepositoryIdentification.newBuilder().setRepoId(id).build())
             .setBranch(branchName)
             .build();
-    GetBranchRequest.Response getBranchResponse =
-        versioningServiceBlockingStub.getBranch(getBranchRequest);
+    getBranchResponse = versioningServiceBlockingStub.getBranch(getBranchRequest);
     Commit branchRootCommit = getBranchResponse.getCommit();
     Assert.assertEquals(
         "Expected commit not found in the response",
-        commitShaList.get(0),
+        commitShaList.get(3),
         branchRootCommit.getCommitSha());
 
     ListBranchCommitsRequest listBranchCommitsRequest =
@@ -1294,7 +1286,7 @@ public class RepositoryTest {
         versioningServiceBlockingStub.listBranchCommits(listBranchCommitsRequest);
     Assert.assertEquals(
         "Commit count not match with expected commit count",
-        4,
+        5,
         listBranchCommitsResponse.getCommitsCount());
 
     commitShaList.forEach(

@@ -1,6 +1,7 @@
 package ai.verta.modeldb.versioning;
 
 import ai.verta.modeldb.ModelDBAuthInterceptor;
+import ai.verta.modeldb.ModelDBConstants;
 import ai.verta.modeldb.ModelDBException;
 import ai.verta.modeldb.authservice.AuthService;
 import ai.verta.modeldb.authservice.RoleService;
@@ -16,6 +17,7 @@ import ai.verta.uac.UserInfo;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -112,6 +114,26 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
           requestBuilder.setRepository(request.getRepository().toBuilder().setOwner(vertaId));
         }
         SetRepository.Response response = repositoryDAO.setRepository(requestBuilder.build(), true);
+
+        RepositoryIdentification repositoryId =
+            RepositoryIdentification.newBuilder()
+                .setRepoId(response.getRepository().getId())
+                .build();
+        CreateCommitRequest.Response commitResponse =
+            commitDAO.setCommit(
+                authService.getVertaIdFromUserInfo(userInfo),
+                Commit.newBuilder().setMessage(ModelDBConstants.INITIAL_COMMIT_MESSAGE).build(),
+                (session) ->
+                    datasetComponentDAO.setBlobs(session, Collections.emptyList(), fileHasher),
+                (session) -> repositoryDAO.getRepositoryById(session, repositoryId));
+
+        repositoryDAO.setBranch(
+            SetBranchRequest.newBuilder()
+                .setCommitSha(commitResponse.getCommit().getCommitSha())
+                .setBranch(ModelDBConstants.MASTER_BRANCH)
+                .setRepositoryId(repositoryId)
+                .build());
+
         responseObserver.onNext(response);
         responseObserver.onCompleted();
       }
@@ -205,6 +227,9 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
         new RequestLatencyResource(modelDBAuthInterceptor.getMethodName())) {
       if (request.getBlobsCount() == 0) {
         throw new ModelDBException("Blob list should not be empty", Code.INVALID_ARGUMENT);
+      } else if (request.getCommit().getParentShasList().isEmpty()) {
+        throw new ModelDBException(
+            "Parent commits not found in the CreateCommitRequest", Code.INVALID_ARGUMENT);
       }
       CreateCommitRequest.Builder newRequest = clearCommitDetails(request);
       UserInfo currentLoginUserInfo = authService.getCurrentLoginUserInfo();
