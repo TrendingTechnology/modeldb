@@ -1,6 +1,5 @@
 package ai.verta.modeldb.entities.environment;
 
-import ai.verta.modeldb.entities.ComponentEntity;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,6 +28,4 @@ public class EnvironmentBlobEntity {
   @OneToOne(targetEntity = DockerEnvironmentBlobEntity.class, cascade = CascadeType.ALL)
   @JoinColumn(name = "docker_environment_blob_hash")
   private DockerEnvironmentBlobEntity dockerEnvironmentBlobEntity;
-
 }
-

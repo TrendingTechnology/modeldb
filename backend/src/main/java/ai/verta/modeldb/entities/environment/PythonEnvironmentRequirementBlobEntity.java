@@ -53,18 +53,18 @@ public class PythonEnvironmentRequirementBlobEntity implements Serializable {
       return false;
     }
     PythonEnvironmentRequirementBlobEntity that = (PythonEnvironmentRequirementBlobEntity) o;
-    return Objects.equals(pythonEnvironmentBlobEntity, that.pythonEnvironmentBlobEntity) &&
-        Objects.equals(library, that.library) &&
-        Objects.equals(constraint, that.constraint) &&
-        Objects.equals(major, that.major) &&
-        Objects.equals(minor, that.minor) &&
-        Objects.equals(patch, that.patch) &&
-        Objects.equals(req_or_constraint, that.req_or_constraint);
+    return Objects.equals(pythonEnvironmentBlobEntity, that.pythonEnvironmentBlobEntity)
+        && Objects.equals(library, that.library)
+        && Objects.equals(constraint, that.constraint)
+        && Objects.equals(major, that.major)
+        && Objects.equals(minor, that.minor)
+        && Objects.equals(patch, that.patch)
+        && Objects.equals(req_or_constraint, that.req_or_constraint);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(pythonEnvironmentBlobEntity, library, constraint, major, minor, patch,
-        req_or_constraint);
+    return Objects.hash(
+        pythonEnvironmentBlobEntity, library, constraint, major, minor, patch, req_or_constraint);
   }
 }

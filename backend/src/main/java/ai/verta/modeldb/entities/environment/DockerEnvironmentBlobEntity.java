@@ -1,6 +1,5 @@
 package ai.verta.modeldb.entities.environment;
 
-import ai.verta.modeldb.entities.ComponentEntity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -25,4 +24,3 @@ public class DockerEnvironmentBlobEntity {
   @Column(name = "sha")
   private String sha;
 }
-

@@ -36,9 +36,9 @@ public class EnvironmentVariablesEntity implements Serializable {
       return false;
     }
     EnvironmentVariablesEntity that = (EnvironmentVariablesEntity) o;
-    return Objects.equals(environmentBlobEntity, that.environmentBlobEntity) &&
-        Objects.equals(variable_name, that.variable_name) &&
-        Objects.equals(variable_value, that.variable_value);
+    return Objects.equals(environmentBlobEntity, that.environmentBlobEntity)
+        && Objects.equals(variable_name, that.variable_name)
+        && Objects.equals(variable_value, that.variable_value);
   }
 
   @Override
@@ -46,4 +46,3 @@ public class EnvironmentVariablesEntity implements Serializable {
     return Objects.hash(environmentBlobEntity, variable_name, variable_value);
   }
 }
-

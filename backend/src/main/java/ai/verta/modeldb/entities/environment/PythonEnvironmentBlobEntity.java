@@ -27,4 +27,3 @@ public class PythonEnvironmentBlobEntity {
   @Column(name = "suffix", columnDefinition = "varchar", length = 50)
   private String suffix;
 }
-

@@ -35,6 +35,9 @@ import ai.verta.modeldb.entities.environment.EnvironmentCommandLineEntity;
 import ai.verta.modeldb.entities.environment.EnvironmentVariablesEntity;
 import ai.verta.modeldb.entities.environment.PythonEnvironmentBlobEntity;
 import ai.verta.modeldb.entities.environment.PythonEnvironmentRequirementBlobEntity;
+import ai.verta.modeldb.entities.hyperparameterConfig.ConfigBlob;
+import ai.verta.modeldb.entities.hyperparameterConfig.HyperparameterElementConfigBlobEntity;
+import ai.verta.modeldb.entities.hyperparameterConfig.HyperparameterSetConfigBlobEntity;
 import ai.verta.modeldb.entities.metadata.LabelsMappingEntity;
 import ai.verta.modeldb.entities.versioning.BranchEntity;
 import ai.verta.modeldb.entities.versioning.CommitEntity;
@@ -133,7 +136,10 @@ public class ModelDBHibernateUtil {
     PythonEnvironmentRequirementBlobEntity.class,
     EnvironmentCommandLineEntity.class,
     EnvironmentVariablesEntity.class,
-    BranchEntity.class
+    BranchEntity.class,
+    HyperparameterElementConfigBlobEntity.class,
+    HyperparameterSetConfigBlobEntity.class,
+    ConfigBlob.class
   };
 
   private ModelDBHibernateUtil() {}
