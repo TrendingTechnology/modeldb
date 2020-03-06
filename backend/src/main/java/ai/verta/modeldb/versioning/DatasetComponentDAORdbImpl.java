@@ -65,7 +65,7 @@ public class DatasetComponentDAORdbImpl implements DatasetComponentDAO {
     }
 
     String getSha256() {
-      return sha256 != null ? sha256 : "";
+      return sha256;
     }
 
     String getType() {

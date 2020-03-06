@@ -17,7 +17,6 @@ import ai.verta.uac.UserInfo;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -123,8 +122,7 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
             commitDAO.setCommit(
                 authService.getVertaIdFromUserInfo(userInfo),
                 Commit.newBuilder().setMessage(ModelDBConstants.INITIAL_COMMIT_MESSAGE).build(),
-                (session) ->
-                    datasetComponentDAO.setBlobs(session, Collections.emptyList(), fileHasher),
+                session -> FileHasher.getSha(new String()),
                 (session) -> repositoryDAO.getRepositoryById(session, repositoryId));
 
         repositoryDAO.setBranch(
