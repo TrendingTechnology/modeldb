@@ -5,8 +5,8 @@ import ai.verta.modeldb.entities.versioning.CommitEntity;
 import ai.verta.modeldb.entities.versioning.InternalFolderElementEntity;
 import ai.verta.modeldb.entities.versioning.RepositoryEntity;
 import ai.verta.modeldb.utils.ModelDBHibernateUtil;
-import ai.verta.modeldb.versioning.blob.BlobContainer;
-import ai.verta.modeldb.versioning.blob.BlobFactory;
+import ai.verta.modeldb.versioning.blob.container.BlobContainer;
+import ai.verta.modeldb.versioning.blob.factory.BlobFactory;
 import com.google.protobuf.ProtocolStringList;
 import io.grpc.Status;
 import java.security.NoSuchAlgorithmException;
@@ -35,14 +35,23 @@ public class BlobDAORdbImpl implements DatasetComponentDAO {
    * @throws ModelDBException
    */
   @Override
-  public String setBlobs(Session session, List<BlobContainer> blobContainers, FileHasher fileHasher)
+  public String setBlobs(List<BlobContainer> blobContainers, FileHasher fileHasher)
       throws NoSuchAlgorithmException, ModelDBException {
     TreeElem rootTree = new TreeElem();
     for (BlobContainer blobContainer : blobContainers) {
-      blobContainer.process(session, rootTree, fileHasher);
+      // should save each blob during one session to avoid recurring entities ids
+      try (Session session = ModelDBHibernateUtil.getSessionFactory().openSession()) {
+        session.beginTransaction();
+        blobContainer.process(session, rootTree, fileHasher);
+        session.getTransaction().commit();
+      }
     }
-    final InternalFolderElement internalFolderElement = rootTree.saveFolders(session, fileHasher);
-    return internalFolderElement.getElementSha();
+    try (Session session = ModelDBHibernateUtil.getSessionFactory().openSession()) {
+      session.beginTransaction();
+      final InternalFolderElement internalFolderElement = rootTree.saveFolders(session, fileHasher);
+      session.getTransaction().commit();
+      return internalFolderElement.getElementSha();
+    }
   }
 
   private Blob getBlob(Session session, InternalFolderElementEntity folderElementEntity)

@@ -1,7 +1,7 @@
-package ai.verta.modeldb.versioning.blob;
+package ai.verta.modeldb.versioning.blob.factory;
 
-import static ai.verta.modeldb.versioning.blob.EnvironmentContainer.DOCKER_ENV_TYPE;
-import static ai.verta.modeldb.versioning.blob.EnvironmentContainer.PYTHON_ENV_TYPE;
+import static ai.verta.modeldb.versioning.blob.container.EnvironmentContainer.DOCKER_ENV_TYPE;
+import static ai.verta.modeldb.versioning.blob.container.EnvironmentContainer.PYTHON_ENV_TYPE;
 
 import ai.verta.modeldb.entities.environment.EnvironmentBlobEntity;
 import ai.verta.modeldb.entities.environment.EnvironmentCommandLineEntity;

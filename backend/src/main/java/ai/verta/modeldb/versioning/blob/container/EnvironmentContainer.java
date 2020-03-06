@@ -1,7 +1,9 @@
-package ai.verta.modeldb.versioning.blob;
+package ai.verta.modeldb.versioning.blob.container;
+
+import static ai.verta.modeldb.versioning.blob.factory.BlobFactory.DOCKER_ENVIRONMENT_BLOB;
+import static ai.verta.modeldb.versioning.blob.factory.BlobFactory.PYTHON_ENVIRONMENT_BLOB;
 
 import ai.verta.modeldb.ModelDBException;
-import ai.verta.modeldb.entities.BlobTreeInformation;
 import ai.verta.modeldb.entities.environment.DockerEnvironmentBlobEntity;
 import ai.verta.modeldb.entities.environment.EnvironmentBlobEntity;
 import ai.verta.modeldb.entities.environment.EnvironmentCommandLineEntity;
@@ -125,7 +127,7 @@ public class EnvironmentContainer extends BlobContainer {
     entities.add(environmentBlobEntity);
     switch (environment.getContentCase()) {
       case PYTHON:
-        blobType = PythonEnvironmentBlob.class.getSimpleName();
+        blobType = PYTHON_ENVIRONMENT_BLOB;
         PythonEnvironmentBlob python = environment.getPython();
         final String pythonBlobHash = computeSHA(python);
         environmentBlobEntity.setBlob_hash(FileHasher.getSha((blobHash + pythonBlobHash)));
@@ -154,7 +156,7 @@ public class EnvironmentContainer extends BlobContainer {
         }
         break;
       case DOCKER:
-        blobType = DockerEnvironmentBlob.class.getSimpleName();
+        blobType = DOCKER_ENVIRONMENT_BLOB;
         DockerEnvironmentBlob docker = environment.getDocker();
         final String dockerBlobHash = computeSHA(docker);
         environmentBlobEntity.setBlob_hash(FileHasher.getSha((blobHash + dockerBlobHash)));
@@ -185,30 +187,8 @@ public class EnvironmentContainer extends BlobContainer {
       session.saveOrUpdate(entity);
     }
     final List<String> locationList = getLocationList();
-    rootTree.push(
-        locationList,
-        environmentBlobEntity.getBlob_hash(),
-        blobType,
-        new BlobTreeInformation() {
 
-          @Override
-          public void setBaseBlobHash(String folderHash) {}
-
-          @Override
-          public boolean hasComponents() {
-            return false;
-          }
-
-          @Override
-          public String getElementSha() {
-            return environmentBlobEntity.getBlob_hash();
-          }
-
-          @Override
-          public String getElementName() {
-            return locationList.get(locationList.size() - 1);
-          }
-        });
+    rootTree.push(locationList, environmentBlobEntity.getBlob_hash(), blobType);
   }
 
   private static final String PATTERN = "[a-zA-Z0-9_-]+";
@@ -227,14 +207,14 @@ public class EnvironmentContainer extends BlobContainer {
     StringBuilder sb = new StringBuilder();
     sb.append("env:");
     for (EnvironmentVariablesBlob environmentVariablesBlob : blob.getEnvironmentVariablesList()) {
-      sb.append("name:")
+      sb.append(":name:")
           .append(environmentVariablesBlob.getName())
           .append("value:")
           .append(environmentVariablesBlob.getValue());
     }
-    sb.append("command_line:");
+    sb.append(":command_line:");
     for (String commandLine : blob.getCommandLineList()) {
-      sb.append("command:").append(commandLine);
+      sb.append(":command:").append(commandLine);
     }
     return FileHasher.getSha(sb.toString());
   }
@@ -244,21 +224,21 @@ public class EnvironmentContainer extends BlobContainer {
     final VersionEnvironmentBlob version = blob.getVersion();
     sb.append("python:");
     appendVersion(sb, version);
-    sb.append("requirements:");
+    sb.append(":requirements:");
     for (PythonRequirementEnvironmentBlob pythonRequirementEnvironmentBlob :
         blob.getRequirementsList()) {
-      sb.append("library:")
+      sb.append(":library:")
           .append(pythonRequirementEnvironmentBlob.getLibrary())
-          .append("constraint:")
+          .append(":constraint:")
           .append(pythonRequirementEnvironmentBlob.getConstraint());
       appendVersion(sb, pythonRequirementEnvironmentBlob.getVersion());
     }
-    sb.append("constraints:");
+    sb.append(":constraints:");
     for (PythonRequirementEnvironmentBlob pythonConstraintEnvironmentBlob :
         blob.getConstraintsList()) {
-      sb.append("library:")
+      sb.append(":library:")
           .append(pythonConstraintEnvironmentBlob.getLibrary())
-          .append("constraint:")
+          .append(":constraint:")
           .append(pythonConstraintEnvironmentBlob.getConstraint());
       appendVersion(sb, pythonConstraintEnvironmentBlob.getVersion());
     }
@@ -269,20 +249,20 @@ public class EnvironmentContainer extends BlobContainer {
     StringBuilder sb = new StringBuilder();
     sb.append("docker:repository")
         .append(blob.getRepository())
-        .append("sha:")
+        .append(":sha:")
         .append(blob.getSha())
-        .append("tag:")
+        .append(":tag:")
         .append(blob.getTag());
     return FileHasher.getSha(sb.toString());
   }
 
   private void appendVersion(StringBuilder sb, VersionEnvironmentBlob version) {
     sb.append("version:")
-        .append("major:")
+        .append(":major:")
         .append(version.getMajor())
-        .append("minor")
+        .append(":minor")
         .append(version.getMinor())
-        .append("patch")
+        .append(":patch")
         .append(version.getPatch());
   }
 }
