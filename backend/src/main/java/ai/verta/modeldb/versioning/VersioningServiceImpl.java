@@ -12,10 +12,13 @@ import ai.verta.modeldb.utils.ModelDBUtils;
 import ai.verta.modeldb.versioning.ListRepositoriesRequest.Response;
 import ai.verta.modeldb.versioning.PathDatasetComponentBlob.Builder;
 import ai.verta.modeldb.versioning.VersioningServiceGrpc.VersioningServiceImplBase;
+import ai.verta.modeldb.versioning.blob.container.BlobContainer;
 import ai.verta.uac.UserInfo;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
 import java.security.NoSuchAlgorithmException;
+import java.util.LinkedList;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,6 +64,7 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
       try (RequestLatencyResource latencyResource =
           new RequestLatencyResource(modelDBAuthInterceptor.getMethodName())) {
         if (request.hasPagination()) {
+
           if (request.getPagination().getPageLimit() < 1
               || request.getPagination().getPageLimit() > 100) {
             throw new ModelDBException("Page limit is invalid", Code.INVALID_ARGUMENT);
@@ -206,15 +210,14 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
       if (request.getBlobsCount() == 0) {
         throw new ModelDBException("Blob list should not be empty", Code.INVALID_ARGUMENT);
       }
-      CreateCommitRequest.Builder newRequest = clearCommitDetails(request);
+      List<BlobContainer> blobContainers = validateBlobs(request);
       UserInfo currentLoginUserInfo = authService.getCurrentLoginUserInfo();
 
       CreateCommitRequest.Response response =
           commitDAO.setCommit(
               authService.getVertaIdFromUserInfo(currentLoginUserInfo),
               request.getCommit(),
-              (session) ->
-                  datasetComponentDAO.setBlobs(session, newRequest.getBlobsList(), fileHasher),
+              () -> datasetComponentDAO.setBlobs(blobContainers, fileHasher),
               (session) -> repositoryDAO.getRepositoryById(session, request.getRepositoryId()));
 
       responseObserver.onNext(response);
@@ -225,58 +228,19 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
     }
   }
 
-  // returns a builder without the commit Details like message and author
-  private CreateCommitRequest.Builder clearCommitDetails(CreateCommitRequest request)
-      throws ModelDBException, NoSuchAlgorithmException {
-    CreateCommitRequest.Builder newRequest = CreateCommitRequest.newBuilder();
-    for (BlobExpanded blob : request.getBlobsList()) {
-      if (blob.getLocationList().isEmpty()) {
+  private List<BlobContainer> validateBlobs(CreateCommitRequest request) throws ModelDBException {
+    List<BlobContainer> blobContainers = new LinkedList<>();
+    for (BlobExpanded blobExpanded : request.getBlobsList()) {
+      if (blobExpanded.getLocationList().isEmpty()) {
         throw new ModelDBException("Blob path should not be empty", Code.INVALID_ARGUMENT);
       }
-      switch (blob.getBlob().getContentCase()) {
-        case DATASET:
-          final DatasetBlob dataset = blob.getBlob().getDataset();
-          final DatasetBlob.Builder newDataset = validateDataset(dataset);
-          newRequest.addBlobs(blob.toBuilder().setBlob(Blob.newBuilder().setDataset(newDataset)));
-          break;
-        case ENVIRONMENT:
-          // Coming Soon.
-          break;
-        case CONTENT_NOT_SET:
-        default:
-          break;
+      final BlobContainer blobContainer = BlobContainer.create(blobExpanded);
+      if (blobContainer != null) {
+        blobContainer.validate();
+        blobContainers.add(blobContainer);
       }
     }
-    return newRequest;
-  }
-  // Not sure if this is required, Validate paths
-  // TODO EL to add comment on what this function is suppose to do
-  private DatasetBlob.Builder validateDataset(final DatasetBlob dataset)
-      throws ModelDBException, NoSuchAlgorithmException {
-    final DatasetBlob.Builder newDataset = DatasetBlob.newBuilder();
-
-    switch (dataset.getContentCase()) {
-      case S3:
-        S3DatasetBlob.Builder newS3BlobBuilder = S3DatasetBlob.newBuilder();
-        for (S3DatasetComponentBlob component : dataset.getS3().getComponentsList()) {
-          if (!component.hasPath()) {
-            throw new ModelDBException("Blob path should not be empty", Code.INVALID_ARGUMENT);
-          }
-          newS3BlobBuilder.addComponents(component.toBuilder().setPath(component.getPath()));
-        }
-        newDataset.setS3(newS3BlobBuilder);
-        break;
-      case PATH:
-        PathDatasetBlob.Builder newPathBlobBuilder = PathDatasetBlob.newBuilder();
-        for (PathDatasetComponentBlob component : dataset.getPath().getComponentsList()) {
-          newPathBlobBuilder.addComponents(component);
-        }
-        newDataset.setPath(newPathBlobBuilder);
-        break;
-      default:
-        throw new ModelDBException("Blob unknown type", Code.INVALID_ARGUMENT);
-    }
-    return newDataset;
+    return blobContainers;
   }
 
   @Override

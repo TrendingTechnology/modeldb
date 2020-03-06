@@ -27,6 +27,8 @@ import ai.verta.modeldb.entities.QueryParameterEntity;
 import ai.verta.modeldb.entities.RawDatasetVersionInfoEntity;
 import ai.verta.modeldb.entities.TagsMapping;
 import ai.verta.modeldb.entities.UserCommentEntity;
+import ai.verta.modeldb.entities.code.GitCodeBlobEntity;
+import ai.verta.modeldb.entities.code.NotebookCodeBlobEntity;
 import ai.verta.modeldb.entities.dataset.PathDatasetComponentBlobEntity;
 import ai.verta.modeldb.entities.dataset.S3DatasetComponentBlobEntity;
 import ai.verta.modeldb.entities.environment.DockerEnvironmentBlobEntity;
@@ -140,6 +142,9 @@ public class ModelDBHibernateUtil {
     HyperparameterElementConfigBlobEntity.class,
     HyperparameterSetConfigBlobEntity.class,
     ConfigBlob.class
+    GitCodeBlobEntity.class,
+    NotebookCodeBlobEntity.class,
+    BranchEntity.class
   };
 
   private ModelDBHibernateUtil() {}

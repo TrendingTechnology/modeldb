@@ -1,6 +1,5 @@
 package ai.verta.modeldb.entities.dataset;
 
-import ai.verta.modeldb.entities.ComponentEntity;
 import ai.verta.modeldb.versioning.PathDatasetComponentBlob;
 import java.io.Serializable;
 import java.util.Objects;
@@ -12,13 +11,13 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "path_dataset_component_blob")
-public class PathDatasetComponentBlobEntity implements ComponentEntity {
+public class PathDatasetComponentBlobEntity {
   public PathDatasetComponentBlobEntity() {}
 
   public PathDatasetComponentBlobEntity(
-      String blobHash, PathDatasetComponentBlob pathDatasetComponentBlob) {
+      String blobHash, String blobHashDataset, PathDatasetComponentBlob pathDatasetComponentBlob) {
 
-    this.id = new PathDatasetComponentBlobId(blobHash);
+    this.id = new PathDatasetComponentBlobId(blobHash, blobHashDataset);
     this.path = pathDatasetComponentBlob.getPath();
     this.size = pathDatasetComponentBlob.getSize();
     this.last_modified_at_source = pathDatasetComponentBlob.getLastModifiedAtSource();
@@ -72,16 +71,6 @@ public class PathDatasetComponentBlobEntity implements ComponentEntity {
         .setMd5(this.md5)
         .build();
   }
-
-  @Override
-  public void setBlobHash(String blobHash) {
-    id.setBlob_hash(blobHash);
-  }
-
-  @Override
-  public void setBaseBlobHash(String folderHash) {
-    id.setPath_dataset_blob_id(folderHash);
-  }
 }
 
 @Embeddable
@@ -97,8 +86,9 @@ class PathDatasetComponentBlobId implements Serializable {
       length = 64)
   private String path_dataset_blob_id;
 
-  public PathDatasetComponentBlobId(String blobHash) {
+  public PathDatasetComponentBlobId(String blobHash, String datasetBlobHash) {
     this.blob_hash = blobHash;
+    path_dataset_blob_id = datasetBlobHash;
   }
 
   private PathDatasetComponentBlobId() {}
@@ -123,13 +113,5 @@ class PathDatasetComponentBlobId implements Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(getBlob_hash(), getPath_dataset_blob_id());
-  }
-
-  public void setBlob_hash(String blob_hash) {
-    this.blob_hash = blob_hash;
-  }
-
-  public void setPath_dataset_blob_id(String path_dataset_blob_id) {
-    this.path_dataset_blob_id = path_dataset_blob_id;
   }
 }

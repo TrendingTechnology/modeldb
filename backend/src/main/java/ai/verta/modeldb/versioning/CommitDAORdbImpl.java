@@ -18,7 +18,6 @@ import org.hibernate.Session;
 import org.hibernate.query.Query;
 
 public class CommitDAORdbImpl implements CommitDAO {
-  public static final String CANT_FIND_FOLDER = "Can't find folder";
 
   /**
    * commit : details of the commit and the blobs to be added setBlobs : recursively creates trees
@@ -28,14 +27,14 @@ public class CommitDAORdbImpl implements CommitDAO {
   public Response setCommit(
       String author, Commit commit, BlobFunction setBlobs, RepositoryFunction getRepository)
       throws ModelDBException, NoSuchAlgorithmException {
+    final String rootSha = setBlobs.apply();
+    long timeCreated = new Date().getTime();
+    if (App.getInstance().getStoreClientCreationTimestamp() && commit.getDateCreated() != 0L) {
+      timeCreated = commit.getDateCreated();
+    }
+    final String commitSha = generateCommitSHA(rootSha, commit, timeCreated);
     try (Session session = ModelDBHibernateUtil.getSessionFactory().openSession()) {
       session.beginTransaction();
-      final String rootSha = setBlobs.apply(session);
-      long timeCreated = new Date().getTime();
-      if (App.getInstance().getStoreClientCreationTimestamp() && commit.getDateCreated() != 0L) {
-        timeCreated = commit.getDateCreated();
-      }
-      final String commitSha = generateCommitSHA(rootSha, commit, timeCreated);
       Commit internalCommit =
           Commit.newBuilder()
               .setDateCreated(timeCreated)
