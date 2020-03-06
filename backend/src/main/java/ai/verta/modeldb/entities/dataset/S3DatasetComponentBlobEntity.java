@@ -1,6 +1,5 @@
 package ai.verta.modeldb.entities.dataset;
 
-import ai.verta.modeldb.entities.ComponentEntity;
 import ai.verta.modeldb.versioning.PathDatasetComponentBlob;
 import ai.verta.modeldb.versioning.S3DatasetComponentBlob;
 import java.io.Serializable;
@@ -13,14 +12,14 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "s3_dataset_component_blob")
-public class S3DatasetComponentBlobEntity implements ComponentEntity {
+public class S3DatasetComponentBlobEntity {
   public S3DatasetComponentBlobEntity() {}
 
   public S3DatasetComponentBlobEntity(
-      String blobHash, S3DatasetComponentBlob s3DatasetComponentBlob) {
+      String blobHash, String blobHashDataset, S3DatasetComponentBlob s3DatasetComponentBlob) {
 
     PathDatasetComponentBlob pathDatasetComponentBlob = s3DatasetComponentBlob.getPath();
-    this.id = new S3DatasetComponentBlobId(blobHash);
+    this.id = new S3DatasetComponentBlobId(blobHash, blobHashDataset);
     this.path = pathDatasetComponentBlob.getPath();
     this.size = pathDatasetComponentBlob.getSize();
     this.last_modified_at_source = pathDatasetComponentBlob.getLastModifiedAtSource();
@@ -77,16 +76,6 @@ public class S3DatasetComponentBlobEntity implements ComponentEntity {
                 .build())
         .build();
   }
-
-  @Override
-  public void setBlobHash(String blobHash) {
-    id.setBlob_hash(blobHash);
-  }
-
-  @Override
-  public void setBaseBlobHash(String folderHash) {
-    id.setS3_dataset_blob_id(folderHash);
-  }
 }
 
 @Embeddable
@@ -98,8 +87,9 @@ class S3DatasetComponentBlobId implements Serializable {
   @Column(name = "s3_dataset_blob_id", nullable = false, columnDefinition = "varchar", length = 64)
   private String s3_dataset_blob_id;
 
-  public S3DatasetComponentBlobId(String blobHash) {
+  public S3DatasetComponentBlobId(String blobHash, String blobHashDataset) {
     this.blob_hash = blobHash;
+    this.s3_dataset_blob_id = blobHashDataset;
   }
 
   private S3DatasetComponentBlobId() {}
@@ -124,13 +114,5 @@ class S3DatasetComponentBlobId implements Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(getBlob_hash(), getS3_dataset_blob_id());
-  }
-
-  public void setBlob_hash(String blob_hash) {
-    this.blob_hash = blob_hash;
-  }
-
-  public void setS3_dataset_blob_id(String s3_dataset_blob_id) {
-    this.s3_dataset_blob_id = s3_dataset_blob_id;
   }
 }
