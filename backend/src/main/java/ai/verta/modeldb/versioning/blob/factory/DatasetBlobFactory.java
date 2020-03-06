@@ -46,8 +46,7 @@ public class DatasetBlobFactory extends BlobFactory {
             + S3DatasetComponentBlobEntity.class.getSimpleName()
             + " s3 WHERE s3.id.s3_dataset_blob_id = :blobShas";
 
-    Query<S3DatasetComponentBlobEntity> s3ComponentQuery =
-        session.createQuery(s3ComponentQueryHQL);
+    Query<S3DatasetComponentBlobEntity> s3ComponentQuery = session.createQuery(s3ComponentQueryHQL);
     s3ComponentQuery.setParameter("blobShas", blobHash);
     List<S3DatasetComponentBlobEntity> datasetComponentBlobEntities = s3ComponentQuery.list();
 
@@ -84,5 +83,4 @@ public class DatasetBlobFactory extends BlobFactory {
       throw new ModelDBException("Path dataset Blob not found", Status.Code.NOT_FOUND);
     }
   }
-
 }

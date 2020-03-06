@@ -10,7 +10,10 @@ import ai.verta.modeldb.versioning.blob.factory.BlobFactory;
 import com.google.protobuf.ProtocolStringList;
 import io.grpc.Status;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -301,294 +304,246 @@ public class BlobDAORdbImpl implements DatasetComponentDAO {
   public ComputeRepositoryDiffRequest.Response computeRepositoryDiff(
       RepositoryFunction repositoryFunction, ComputeRepositoryDiffRequest request)
       throws ModelDBException {
-    //    try (Session session = ModelDBHibernateUtil.getSessionFactory().openSession()) {
-    //      session.beginTransaction();
-    //      RepositoryEntity repositoryEntity = repositoryFunction.apply(session);
-    //
-    //      CommitEntity internalCommitA = session.get(CommitEntity.class, request.getCommitA());
-    //      if (internalCommitA == null) {
-    //        throw new ModelDBException(
-    //            "No such commit found : " + request.getCommitA(), Status.Code.NOT_FOUND);
-    //      }
-    //
-    //      CommitEntity internalCommitB = session.get(CommitEntity.class, request.getCommitB());
-    //      if (internalCommitB == null) {
-    //        throw new ModelDBException(
-    //            "No such commit found : " + request.getCommitB(), Status.Code.NOT_FOUND);
-    //      }
-    //
-    //      if (!VersioningUtils.commitRepositoryMappingExists(
-    //          session, internalCommitA.getCommit_hash(), repositoryEntity.getId())) {
-    //        throw new ModelDBException(
-    //            "No such commit found in the repository : " + internalCommitA.getCommit_hash(),
-    //            Status.Code.NOT_FOUND);
-    //      }
-    //
-    //      if (!VersioningUtils.commitRepositoryMappingExists(
-    //          session, internalCommitB.getCommit_hash(), repositoryEntity.getId())) {
-    //        throw new ModelDBException(
-    //            "No such commit found in the repository : " + internalCommitB.getCommit_hash(),
-    //            Status.Code.NOT_FOUND);
-    //      }
-    //
-    //      Set<BlobExpanded> locationBlobListCommitA =
-    //          getCommitBlobList(session, internalCommitA.getRootSha(), new ArrayList<>());
-    //      Map<String, BlobExpanded> locationBlobsMapCommitA =
-    //          getLocationWiseBlobExpandedMapFromList(locationBlobListCommitA);
-    //
-    //      Set<BlobExpanded> locationBlobListCommitB =
-    //          getCommitBlobList(session, internalCommitB.getRootSha(), new ArrayList<>());
-    //      Map<String, BlobExpanded> locationBlobsMapCommitB =
-    //          getLocationWiseBlobExpandedMapFromList(locationBlobListCommitB);
-    //
-    //      session.getTransaction().commit();
-    //
-    //      // Added new blob location in the CommitA
-    //      Set<String> addedLocations = new HashSet<>(locationBlobsMapCommitB.keySet());
-    //      addedLocations.addAll(locationBlobsMapCommitA.keySet());
-    //      addedLocations.removeAll(locationBlobsMapCommitB.keySet());
-    //      LOGGER.debug("Added location for Diff : {}", addedLocations);
-    //
-    //      // deleted new blob location from the CommitA
-    //      Set<String> deletedLocations = new HashSet<>(locationBlobsMapCommitA.keySet());
-    //      deletedLocations.addAll(locationBlobsMapCommitB.keySet());
-    //      deletedLocations.removeAll(locationBlobsMapCommitA.keySet());
-    //      LOGGER.debug("Deleted location for Diff : {}", deletedLocations);
-    //
-    //      // deleted new blob location from the CommitA
-    //      Set<String> modifiedLocations = new HashSet<>(locationBlobsMapCommitA.keySet());
-    //      modifiedLocations.removeAll(addedLocations);
-    //      LOGGER.debug("Modified location for Diff : {}", modifiedLocations);
-    //
-    //      List<BlobDiff> addedBlobDiffList = getAddedBlobDiff(addedLocations,
-    // locationBlobsMapCommitA);
-    //      List<BlobDiff> deletedBlobDiffList =
-    //          getDeletedBlobDiff(deletedLocations, locationBlobsMapCommitB);
-    //      List<BlobDiff> modifiedBlobDiffList =
-    //          getModifiedBlobDiff(modifiedLocations, locationBlobsMapCommitA,
-    // locationBlobsMapCommitB);
-    //
-    //      return ComputeRepositoryDiffRequest.Response.newBuilder()
-    //          .addAllDiffs(addedBlobDiffList)
-    //          .addAllDiffs(deletedBlobDiffList)
-    //          .addAllDiffs(modifiedBlobDiffList)
-    //          .build();
-    //    }
-    throw new ModelDBException("not yet implemented");
+    try (Session session = ModelDBHibernateUtil.getSessionFactory().openSession()) {
+      session.beginTransaction();
+      RepositoryEntity repositoryEntity = repositoryFunction.apply(session);
+
+      CommitEntity internalCommitA = session.get(CommitEntity.class, request.getCommitA());
+      if (internalCommitA == null) {
+        throw new ModelDBException(
+            "No such commit found : " + request.getCommitA(), Status.Code.NOT_FOUND);
+      }
+
+      CommitEntity internalCommitB = session.get(CommitEntity.class, request.getCommitB());
+      if (internalCommitB == null) {
+        throw new ModelDBException(
+            "No such commit found : " + request.getCommitB(), Status.Code.NOT_FOUND);
+      }
+
+      if (!VersioningUtils.commitRepositoryMappingExists(
+          session, internalCommitA.getCommit_hash(), repositoryEntity.getId())) {
+        throw new ModelDBException(
+            "No such commit found in the repository : " + internalCommitA.getCommit_hash(),
+            Status.Code.NOT_FOUND);
+      }
+
+      if (!VersioningUtils.commitRepositoryMappingExists(
+          session, internalCommitB.getCommit_hash(), repositoryEntity.getId())) {
+        throw new ModelDBException(
+            "No such commit found in the repository : " + internalCommitB.getCommit_hash(),
+            Status.Code.NOT_FOUND);
+      }
+
+      Set<BlobExpanded> locationBlobListCommitA =
+          getCommitBlobList(session, internalCommitA.getRootSha(), new ArrayList<>());
+      Map<String, BlobExpanded> locationBlobsMapCommitA =
+          getLocationWiseBlobExpandedMapFromList(locationBlobListCommitA);
+
+      Set<BlobExpanded> locationBlobListCommitB =
+          getCommitBlobList(session, internalCommitB.getRootSha(), new ArrayList<>());
+      Map<String, BlobExpanded> locationBlobsMapCommitB =
+          getLocationWiseBlobExpandedMapFromList(locationBlobListCommitB);
+
+      session.getTransaction().commit();
+
+      // Added new blob location in the CommitA
+      Set<String> addedLocations = new HashSet<>(locationBlobsMapCommitB.keySet());
+      addedLocations.addAll(locationBlobsMapCommitA.keySet());
+      addedLocations.removeAll(locationBlobsMapCommitB.keySet());
+      LOGGER.debug("Added location for Diff : {}", addedLocations);
+
+      // deleted new blob location from the CommitA
+      Set<String> deletedLocations = new HashSet<>(locationBlobsMapCommitA.keySet());
+      deletedLocations.addAll(locationBlobsMapCommitB.keySet());
+      deletedLocations.removeAll(locationBlobsMapCommitA.keySet());
+      LOGGER.debug("Deleted location for Diff : {}", deletedLocations);
+
+      // deleted new blob location from the CommitA
+      Set<String> modifiedLocations = new HashSet<>(locationBlobsMapCommitA.keySet());
+      modifiedLocations.removeAll(addedLocations);
+      LOGGER.debug("Modified location for Diff : {}", modifiedLocations);
+
+      List<BlobDiff> addedBlobDiffList = getAddedBlobDiff(addedLocations, locationBlobsMapCommitA);
+      List<BlobDiff> deletedBlobDiffList =
+          getDeletedBlobDiff(deletedLocations, locationBlobsMapCommitB);
+      List<BlobDiff> modifiedBlobDiffList =
+          getModifiedBlobDiff(modifiedLocations, locationBlobsMapCommitA, locationBlobsMapCommitB);
+
+      return ComputeRepositoryDiffRequest.Response.newBuilder()
+          .addAllDiffs(addedBlobDiffList)
+          .addAllDiffs(deletedBlobDiffList)
+          .addAllDiffs(modifiedBlobDiffList)
+          .build();
+    }
   }
 
-  //  List<BlobDiff> getAddedBlobDiff(
-  //      Set<String> addedLocations, Map<String, BlobExpanded> locationBlobsMapCommitA) {
-  //    return addedLocations.stream()
-  //        .map(
-  //            location -> {
-  //              BlobExpanded blobExpanded = locationBlobsMapCommitA.get(location);
-  //              Blob blob = blobExpanded.getBlob();
-  //              switch (blob.getContentCase()) {
-  //                case DATASET:
-  //                  switch (blob.getDataset().getContentCase()) {
-  //                    case PATH:
-  //                      PathDatasetBlob pathDatasetBlob = blob.getDataset().getPath();
-  //                      PathDatasetDiff pathDatasetDiff =
-  //
-  // PathDatasetDiff.newBuilder().setA(pathDatasetBlob).setAdded(true).build();
-  //                      DatasetDiff datasetDiff =
-  //                          DatasetDiff.newBuilder().setPath(pathDatasetDiff).build();
-  //                      return BlobDiff.newBuilder()
-  //                          // TODO: Here used the `#` for split the locations but if folder
-  // locations
-  //                          // TODO: - contain the `#` then this functionality will break.
-  //                          .addAllLocation(Arrays.asList(location.split("#")))
-  //                          .setDataset(datasetDiff)
-  //                          .build();
-  //                    case S3:
-  //                      S3DatasetBlob s3DatasetBlob = blob.getDataset().getS3();
-  //                      PathDatasetBlob.Builder s3PathDatasetBlob = PathDatasetBlob.newBuilder();
-  //                      s3DatasetBlob
-  //                          .getComponentsList()
-  //                          .forEach(
-  //                              s3DatasetComponentBlob ->
-  //                                  s3PathDatasetBlob
-  //                                      .addComponents(s3DatasetComponentBlob.getPath())
-  //                                      .build());
-  //                      PathDatasetDiff s3PathDatasetDiff =
-  //                          PathDatasetDiff.newBuilder()
-  //                              .setA(s3PathDatasetBlob)
-  //                              .setAdded(true)
-  //                              .build();
-  //                      S3DatasetDiff s3DatasetDiff =
-  //                          S3DatasetDiff.newBuilder().setPath(s3PathDatasetDiff).build();
-  //                      DatasetDiff finalS3DatasetDiff =
-  //                          DatasetDiff.newBuilder().setS3(s3DatasetDiff).build();
-  //                      return BlobDiff.newBuilder()
-  //                          // TODO: Here used the `#` for split the locations but if folder
-  // locations
-  //                          // TODO: - contain the `#` then this functionality will break.
-  //                          .addAllLocation(Arrays.asList(location.split("#")))
-  //                          .setDataset(finalS3DatasetDiff)
-  //                          .build();
-  //                  }
-  //                  break;
-  //                  // TODO: Implement Diff logic after main functionality done
-  //                case ENVIRONMENT:
-  //                case CODE:
-  //                case CONFIG:
-  //                  break;
-  //              }
-  //              return BlobDiff.newBuilder().build();
-  //            })
-  //        .collect(Collectors.toList());
-  //  }
-  //
-  //  List<BlobDiff> getDeletedBlobDiff(
-  //      Set<String> deletedLocations, Map<String, BlobExpanded> locationBlobsMapCommitB) {
-  //    return deletedLocations.stream()
-  //        .map(
-  //            location -> {
-  //              BlobExpanded blobExpanded = locationBlobsMapCommitB.get(location);
-  //              Blob blob = blobExpanded.getBlob();
-  //              switch (blob.getContentCase()) {
-  //                case DATASET:
-  //                  switch (blob.getDataset().getContentCase()) {
-  //                    case PATH:
-  //                      PathDatasetBlob pathDatasetBlob = blob.getDataset().getPath();
-  //                      PathDatasetDiff pathDatasetDiff =
-  //                          PathDatasetDiff.newBuilder()
-  //                              .setB(pathDatasetBlob)
-  //                              .setDeleted(true)
-  //                              .build();
-  //                      DatasetDiff datasetDiff =
-  //                          DatasetDiff.newBuilder().setPath(pathDatasetDiff).build();
-  //                      return BlobDiff.newBuilder()
-  //                          // TODO: Here used the `#` for split the locations but if folder
-  // locations
-  //                          // TODO: - contain the `#` then this functionality will break.
-  //                          .addAllLocation(Arrays.asList(location.split("#")))
-  //                          .setDataset(datasetDiff)
-  //                          .build();
-  //                    case S3:
-  //                      S3DatasetBlob s3DatasetBlob = blob.getDataset().getS3();
-  //                      PathDatasetBlob.Builder s3PathDatasetBlob = PathDatasetBlob.newBuilder();
-  //                      s3DatasetBlob
-  //                          .getComponentsList()
-  //                          .forEach(
-  //                              s3DatasetComponentBlob ->
-  //                                  s3PathDatasetBlob
-  //                                      .addComponents(s3DatasetComponentBlob.getPath())
-  //                                      .build());
-  //                      PathDatasetDiff s3PathDatasetDiff =
-  //                          PathDatasetDiff.newBuilder()
-  //                              .setB(s3PathDatasetBlob)
-  //                              .setDeleted(true)
-  //                              .build();
-  //                      S3DatasetDiff s3DatasetDiff =
-  //                          S3DatasetDiff.newBuilder().setPath(s3PathDatasetDiff).build();
-  //                      DatasetDiff finalS3DatasetDiff =
-  //                          DatasetDiff.newBuilder().setS3(s3DatasetDiff).build();
-  //                      return BlobDiff.newBuilder()
-  //                          // TODO: Here used the `#` for split the locations but if folder
-  // locations
-  //                          // TODO: - contain the `#` then this functionality will break.
-  //                          .addAllLocation(Arrays.asList(location.split("#")))
-  //                          .setDataset(finalS3DatasetDiff)
-  //                          .build();
-  //                  }
-  //                  break;
-  //                  // TODO: Implement Diff logic after main functionality done
-  //                case ENVIRONMENT:
-  //                case CODE:
-  //                case CONFIG:
-  //                  break;
-  //              }
-  //              return BlobDiff.newBuilder().build();
-  //            })
-  //        .collect(Collectors.toList());
-  //  }
-  //
-  //  List<BlobDiff> getModifiedBlobDiff(
-  //      Set<String> modifiedLocations,
-  //      Map<String, BlobExpanded> locationBlobsMapCommitA,
-  //      Map<String, BlobExpanded> locationBlobsMapCommitB) {
-  //    return modifiedLocations.stream()
-  //        .map(
-  //            location -> {
-  //              BlobExpanded blobExpandedCommitA = locationBlobsMapCommitA.get(location);
-  //              BlobExpanded blobExpandedCommitB = locationBlobsMapCommitB.get(location);
-  //              Blob blobCommitA = blobExpandedCommitA.getBlob();
-  //              Blob blobCommitB = blobExpandedCommitB.getBlob();
-  //              switch (blobCommitA.getContentCase()) {
-  //                case DATASET:
-  //                  switch (blobCommitA.getDataset().getContentCase()) {
-  //                    case PATH:
-  //                      PathDatasetBlob pathDatasetBlobCommitA =
-  // blobCommitA.getDataset().getPath();
-  //                      PathDatasetBlob pathDatasetBlobCommitB =
-  // blobCommitB.getDataset().getPath();
-  //                      PathDatasetDiff pathDatasetDiff =
-  //                          PathDatasetDiff.newBuilder()
-  //                              .setA(pathDatasetBlobCommitA)
-  //                              .setB(pathDatasetBlobCommitB)
-  //                              .build();
-  //                      DatasetDiff datasetDiff =
-  //                          DatasetDiff.newBuilder().setPath(pathDatasetDiff).build();
-  //                      return BlobDiff.newBuilder()
-  //                          // TODO: Here used the `#` for split the locations but if folder
-  // locations
-  //                          // TODO: - contain the `#` then this functionality will break.
-  //                          .addAllLocation(Arrays.asList(location.split("#")))
-  //                          .setDataset(datasetDiff)
-  //                          .build();
-  //                    case S3:
-  //                      S3DatasetBlob s3DatasetBlobCommitA = blobCommitA.getDataset().getS3();
-  //                      PathDatasetBlob.Builder s3PathDatasetBlobCommitA =
-  //                          PathDatasetBlob.newBuilder();
-  //                      s3DatasetBlobCommitA
-  //                          .getComponentsList()
-  //                          .forEach(
-  //                              s3DatasetComponentBlob ->
-  //                                  s3PathDatasetBlobCommitA
-  //                                      .addComponents(s3DatasetComponentBlob.getPath())
-  //                                      .build());
-  //
-  //                      S3DatasetBlob s3DatasetBlobCommitB = blobCommitB.getDataset().getS3();
-  //                      PathDatasetBlob.Builder s3PathDatasetBlobCommitB =
-  //                          PathDatasetBlob.newBuilder();
-  //                      s3DatasetBlobCommitB
-  //                          .getComponentsList()
-  //                          .forEach(
-  //                              s3DatasetComponentBlob ->
-  //                                  s3PathDatasetBlobCommitB
-  //                                      .addComponents(s3DatasetComponentBlob.getPath())
-  //                                      .build());
-  //
-  //                      PathDatasetDiff s3PathDatasetDiff =
-  //                          PathDatasetDiff.newBuilder()
-  //                              .setA(s3PathDatasetBlobCommitA)
-  //                              .setB(s3PathDatasetBlobCommitB)
-  //                              .build();
-  //                      S3DatasetDiff s3DatasetDiff =
-  //                          S3DatasetDiff.newBuilder().setPath(s3PathDatasetDiff).build();
-  //                      DatasetDiff finalS3DatasetDiff =
-  //                          DatasetDiff.newBuilder().setS3(s3DatasetDiff).build();
-  //                      return BlobDiff.newBuilder()
-  //                          // TODO: Here used the `#` for split the locations but if folder
-  // locations
-  //                          // TODO: - contain the `#` then this functionality will break.
-  //                          .addAllLocation(Arrays.asList(location.split("#")))
-  //                          .setDataset(finalS3DatasetDiff)
-  //                          .build();
-  //                  }
-  //                  break;
-  //                  // TODO: Implement Diff logic after main functionality done
-  //                case ENVIRONMENT:
-  //                case CODE:
-  //                case CONFIG:
-  //                  break;
-  //              }
-  //              return BlobDiff.newBuilder().build();
-  //            })
-  //        .collect(Collectors.toList());
-  //  }
+  List<BlobDiff> getAddedBlobDiff(
+      Set<String> addedLocations, Map<String, BlobExpanded> locationBlobsMapCommitA) {
+    return addedLocations.stream()
+        .map(
+            location -> {
+              BlobExpanded blobExpanded = locationBlobsMapCommitA.get(location);
+              Blob blob = blobExpanded.getBlob();
+              switch (blob.getContentCase()) {
+                case DATASET:
+                  switch (blob.getDataset().getContentCase()) {
+                    case PATH:
+                      PathDatasetBlob pathDatasetBlob = blob.getDataset().getPath();
+                      PathDatasetDiff pathDatasetDiff =
+                          PathDatasetDiff.newBuilder()
+                              .addAllA(pathDatasetBlob.getComponentsList())
+                              .build();
+                      DatasetDiff datasetDiff =
+                          DatasetDiff.newBuilder().setPath(pathDatasetDiff).build();
+                      return BlobDiff.newBuilder()
+                          // TODO: Here used the `#` for split the locations but if folder
+                          // TODO: - contain the `#` then this functionality will break.
+                          .addAllLocation(Arrays.asList(location.split("#")))
+                          .setDataset(datasetDiff)
+                          .setStatus(DiffStatusEnum.DiffStatus.ADDED)
+                          .build();
+                    case S3:
+                      S3DatasetBlob s3DatasetBlob = blob.getDataset().getS3();
+                      S3DatasetDiff s3DatasetDiff =
+                          S3DatasetDiff.newBuilder()
+                              .addAllA(s3DatasetBlob.getComponentsList())
+                              .build();
+                      DatasetDiff finalS3DatasetDiff =
+                          DatasetDiff.newBuilder().setS3(s3DatasetDiff).build();
+                      return BlobDiff.newBuilder()
+                          // TODO: Here used the `#` for split the locations but if folder
+                          // TODO: - contain the `#` then this functionality will break.
+                          .addAllLocation(Arrays.asList(location.split("#")))
+                          .setStatus(DiffStatusEnum.DiffStatus.ADDED)
+                          .setDataset(finalS3DatasetDiff)
+                          .build();
+                  }
+                  break;
+                  // TODO: Implement Diff logic after main functionality done
+                case ENVIRONMENT:
+                case CODE:
+                case CONFIG:
+                  break;
+              }
+              return BlobDiff.newBuilder().build();
+            })
+        .collect(Collectors.toList());
+  }
+
+  List<BlobDiff> getDeletedBlobDiff(
+      Set<String> deletedLocations, Map<String, BlobExpanded> locationBlobsMapCommitB) {
+    return deletedLocations.stream()
+        .map(
+            location -> {
+              BlobExpanded blobExpanded = locationBlobsMapCommitB.get(location);
+              Blob blob = blobExpanded.getBlob();
+              switch (blob.getContentCase()) {
+                case DATASET:
+                  switch (blob.getDataset().getContentCase()) {
+                    case PATH:
+                      PathDatasetBlob pathDatasetBlob = blob.getDataset().getPath();
+                      PathDatasetDiff pathDatasetDiff =
+                          PathDatasetDiff.newBuilder()
+                              .addAllB(pathDatasetBlob.getComponentsList())
+                              .build();
+                      DatasetDiff datasetDiff =
+                          DatasetDiff.newBuilder().setPath(pathDatasetDiff).build();
+                      return BlobDiff.newBuilder()
+                          // TODO: Here used the `#` for split the locations but if folder
+                          // TODO: - contain the `#` then this functionality will break.
+                          .addAllLocation(Arrays.asList(location.split("#")))
+                          .setDataset(datasetDiff)
+                          .setStatus(DiffStatusEnum.DiffStatus.DELETED)
+                          .build();
+                    case S3:
+                      S3DatasetBlob s3DatasetBlob = blob.getDataset().getS3();
+                      S3DatasetDiff s3DatasetDiff =
+                          S3DatasetDiff.newBuilder()
+                              .addAllB(s3DatasetBlob.getComponentsList())
+                              .build();
+                      DatasetDiff finalS3DatasetDiff =
+                          DatasetDiff.newBuilder().setS3(s3DatasetDiff).build();
+                      return BlobDiff.newBuilder()
+                          // TODO: Here used the `#` for split the locations but if folder
+                          // TODO: - contain the `#` then this functionality will break.
+                          .addAllLocation(Arrays.asList(location.split("#")))
+                          .setDataset(finalS3DatasetDiff)
+                          .setStatus(DiffStatusEnum.DiffStatus.DELETED)
+                          .build();
+                  }
+                  break;
+                  // TODO: Implement Diff logic after main functionality done
+                case ENVIRONMENT:
+                case CODE:
+                case CONFIG:
+                  break;
+              }
+              return BlobDiff.newBuilder().build();
+            })
+        .collect(Collectors.toList());
+  }
+
+  List<BlobDiff> getModifiedBlobDiff(
+      Set<String> modifiedLocations,
+      Map<String, BlobExpanded> locationBlobsMapCommitA,
+      Map<String, BlobExpanded> locationBlobsMapCommitB) {
+    return modifiedLocations.stream()
+        .map(
+            location -> {
+              BlobExpanded blobExpandedCommitA = locationBlobsMapCommitA.get(location);
+              BlobExpanded blobExpandedCommitB = locationBlobsMapCommitB.get(location);
+              Blob blobCommitA = blobExpandedCommitA.getBlob();
+              Blob blobCommitB = blobExpandedCommitB.getBlob();
+              switch (blobCommitA.getContentCase()) {
+                case DATASET:
+                  switch (blobCommitA.getDataset().getContentCase()) {
+                    case PATH:
+                      PathDatasetBlob pathDatasetBlobCommitA = blobCommitA.getDataset().getPath();
+                      PathDatasetBlob pathDatasetBlobCommitB = blobCommitB.getDataset().getPath();
+                      PathDatasetDiff pathDatasetDiff =
+                          PathDatasetDiff.newBuilder()
+                              .addAllA(pathDatasetBlobCommitA.getComponentsList())
+                              .addAllB(pathDatasetBlobCommitB.getComponentsList())
+                              .build();
+                      DatasetDiff datasetDiff =
+                          DatasetDiff.newBuilder().setPath(pathDatasetDiff).build();
+                      return BlobDiff.newBuilder()
+                          // TODO: Here used the `#` for split the locations but if folder
+                          // TODO: - contain the `#` then this functionality will break.
+                          .addAllLocation(Arrays.asList(location.split("#")))
+                          .setDataset(datasetDiff)
+                          .setStatus(DiffStatusEnum.DiffStatus.MODIFIED)
+                          .build();
+                    case S3:
+                      S3DatasetBlob s3DatasetBlobCommitA = blobCommitA.getDataset().getS3();
+                      S3DatasetBlob s3DatasetBlobCommitB = blobCommitB.getDataset().getS3();
+
+                      S3DatasetDiff s3DatasetDiff =
+                          S3DatasetDiff.newBuilder()
+                              .addAllA(s3DatasetBlobCommitA.getComponentsList())
+                              .addAllB(s3DatasetBlobCommitB.getComponentsList())
+                              .build();
+                      DatasetDiff finalS3DatasetDiff =
+                          DatasetDiff.newBuilder().setS3(s3DatasetDiff).build();
+                      return BlobDiff.newBuilder()
+                          // TODO: Here used the `#` for split the locations but if folder
+                          // TODO: - contain the `#` then this functionality will break.
+                          .addAllLocation(Arrays.asList(location.split("#")))
+                          .setDataset(finalS3DatasetDiff)
+                          .setStatus(DiffStatusEnum.DiffStatus.MODIFIED)
+                          .build();
+                  }
+                  break;
+                  // TODO: Implement Diff logic after main functionality done
+                case ENVIRONMENT:
+                case CODE:
+                case CONFIG:
+                  break;
+              }
+              return BlobDiff.newBuilder().build();
+            })
+        .collect(Collectors.toList());
+  }
 
   private Map<String, BlobExpanded> getLocationWiseBlobExpandedMapFromList(
       Set<BlobExpanded> blobExpandeds) {

@@ -919,7 +919,6 @@ public class RepositoryTest {
         versioningServiceBlockingStub.computeRepositoryDiff(repositoryDiffRequest);
     LOGGER.info("Diff Response: {}", ModelDBUtils.getStringFromProtoObject(repositoryDiffResponse));
     LOGGER.info("Diff Response: {}", repositoryDiffResponse);
-    System.out.println(repositoryDiffResponse.toString());
     List<BlobDiff> blobDiffs = repositoryDiffResponse.getDiffsList();
     Assert.assertEquals("blob count not match with expected blob count", 5, blobDiffs.size());
 
