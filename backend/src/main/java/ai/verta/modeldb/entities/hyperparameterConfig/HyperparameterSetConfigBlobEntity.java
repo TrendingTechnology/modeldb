@@ -7,8 +7,8 @@ import ai.verta.modeldb.versioning.HyperparameterSetConfigBlob;
 import ai.verta.modeldb.versioning.HyperparameterSetConfigBlob.ValueCase;
 import ai.verta.modeldb.versioning.HyperparameterValuesConfigBlob;
 import io.grpc.Status.Code;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -31,36 +31,19 @@ public class HyperparameterSetConfigBlobEntity {
     this.name = hyperparameterSetConfigBlob.getName();
     this.value_type = hyperparameterSetConfigBlob.getValueCase().getNumber();
 
-    Integer interval_begin_hash_index = 0;
-    Integer interval_end_hash_index = 1;
-    Integer interval_step_hash_index = 2;
-    Integer discrete_hash_index = 3;
-
     switch (hyperparameterSetConfigBlob.getValueCase()) {
       case CONTINUOUS:
         ContinuousHyperparameterSetConfigBlob configBlobContinuous =
             hyperparameterSetConfigBlob.getContinuous();
         this.interval_begin_hash =
             new HyperparameterElementConfigBlobEntity(
-                blobHash,
-                commitHash,
-                hyperparameterSetConfigBlob.getValueCase().name(),
-                interval_begin_hash_index,
-                configBlobContinuous.getIntervalBegin());
+                blobHash, commitHash, null, configBlobContinuous.getIntervalBegin());
         this.interval_end_hash =
             new HyperparameterElementConfigBlobEntity(
-                blobHash,
-                commitHash,
-                hyperparameterSetConfigBlob.getValueCase().name(),
-                interval_end_hash_index,
-                configBlobContinuous.getIntervalEnd());
+                blobHash, commitHash, null, configBlobContinuous.getIntervalEnd());
         this.interval_step_hash =
             new HyperparameterElementConfigBlobEntity(
-                blobHash,
-                commitHash,
-                hyperparameterSetConfigBlob.getValueCase().name(),
-                interval_step_hash_index,
-                configBlobContinuous.getIntervalStep());
+                blobHash, commitHash, null, configBlobContinuous.getIntervalStep());
         break;
       case DISCRETE:
         DiscreteHyperparameterSetConfigBlob configBlobContinuousDiscrete =
@@ -68,17 +51,11 @@ public class HyperparameterSetConfigBlobEntity {
         List<HyperparameterValuesConfigBlob> valuesConfigBlobs =
             configBlobContinuousDiscrete.getValuesList();
 
-        this.hyperparameterSetConfigElementMapping =
-            valuesConfigBlobs.stream()
-                .map(
-                    hyperparameterValuesConfigBlob ->
-                        new HyperparameterElementConfigBlobEntity(
-                            blobHash,
-                            commitHash,
-                            hyperparameterSetConfigBlob.getValueCase().name(),
-                            discrete_hash_index,
-                            hyperparameterValuesConfigBlob))
-                .collect(Collectors.toList());
+        for (HyperparameterValuesConfigBlob hyperparameterValuesConfigBlob : valuesConfigBlobs) {
+          this.hyperparameterSetConfigElementMapping.add(
+              new HyperparameterElementConfigBlobEntity(
+                  blobHash, commitHash, null, hyperparameterValuesConfigBlob));
+        }
         break;
       case VALUE_NOT_SET:
       default:
@@ -114,7 +91,8 @@ public class HyperparameterSetConfigBlobEntity {
       name = "hyperparameter_discrete_set_element_mapping",
       joinColumns = {@JoinColumn(name = "set_hash")},
       inverseJoinColumns = {@JoinColumn(name = "element_hash")})
-  private List<HyperparameterElementConfigBlobEntity> hyperparameterSetConfigElementMapping;
+  private List<HyperparameterElementConfigBlobEntity> hyperparameterSetConfigElementMapping =
+      new ArrayList<>();
 
   public HyperparameterSetConfigBlob toProto() throws ModelDBException {
     HyperparameterSetConfigBlob.Builder builder =

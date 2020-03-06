@@ -1,6 +1,8 @@
 package ai.verta.modeldb.entities.hyperparameterConfig;
 
+import ai.verta.modeldb.ModelDBException;
 import ai.verta.modeldb.versioning.HyperparameterValuesConfigBlob;
+import io.grpc.Status;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -15,15 +17,27 @@ public class HyperparameterElementConfigBlobEntity {
       String blobHash,
       String commitHash,
       String name,
-      Integer valueType,
-      HyperparameterValuesConfigBlob hyperparameterConfigBlob) {
+      HyperparameterValuesConfigBlob hyperparameterValuesConfigBlob)
+      throws ModelDBException {
     this.blob_hash = blobHash;
     this.name = name;
     this.commit_hash = commitHash;
-    this.value_type = valueType;
-    this.int_value = hyperparameterConfigBlob.getIntValue();
-    this.float_value = hyperparameterConfigBlob.getFloatValue();
-    this.string_value = hyperparameterConfigBlob.getStringValue();
+    this.value_type = hyperparameterValuesConfigBlob.getValueCase().getNumber();
+    switch (hyperparameterValuesConfigBlob.getValueCase()) {
+      case INT_VALUE:
+        this.int_value = hyperparameterValuesConfigBlob.getIntValue();
+        break;
+      case FLOAT_VALUE:
+        this.float_value = hyperparameterValuesConfigBlob.getFloatValue();
+        break;
+      case STRING_VALUE:
+        this.string_value = hyperparameterValuesConfigBlob.getStringValue();
+        break;
+      case VALUE_NOT_SET:
+      default:
+        throw new ModelDBException(
+            "Invalid value found in HyperparameterValuesConfigBlob", Status.Code.INVALID_ARGUMENT);
+    }
   }
 
   @Id
@@ -49,10 +63,16 @@ public class HyperparameterElementConfigBlobEntity {
   private String string_value;
 
   public HyperparameterValuesConfigBlob toProto() {
-    return HyperparameterValuesConfigBlob.newBuilder()
-        .setIntValue(this.int_value)
-        .setFloatValue(this.float_value)
-        .setStringValue(this.string_value)
-        .build();
+    HyperparameterValuesConfigBlob.Builder builder = HyperparameterValuesConfigBlob.newBuilder();
+    if (this.int_value != null) {
+      builder.setIntValue(this.int_value);
+    }
+    if (this.float_value != null) {
+      builder.setFloatValue(this.float_value);
+    }
+    if (this.string_value != null && !this.string_value.isEmpty()) {
+      builder.setStringValue(this.string_value);
+    }
+    return builder.build();
   }
 }
