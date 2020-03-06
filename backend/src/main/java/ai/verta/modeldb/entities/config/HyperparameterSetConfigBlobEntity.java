@@ -1,4 +1,4 @@
-package ai.verta.modeldb.entities.hyperparameterConfig;
+package ai.verta.modeldb.entities.config;
 
 import ai.verta.modeldb.ModelDBException;
 import ai.verta.modeldb.versioning.ContinuousHyperparameterSetConfigBlob;

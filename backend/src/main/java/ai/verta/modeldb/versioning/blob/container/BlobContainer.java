@@ -10,7 +10,6 @@ import io.grpc.Status.Code;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import org.hibernate.Session;
 
 /** contains proto object and saves it to the database */
@@ -40,6 +39,7 @@ public abstract class BlobContainer {
 
   /**
    * get location list used in in tree representation
+   *
    * @return location list with a first element root folder
    */
   public List<String> getLocationList() {
