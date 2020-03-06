@@ -141,7 +141,7 @@ public class ModelDBHibernateUtil {
     BranchEntity.class,
     HyperparameterElementConfigBlobEntity.class,
     HyperparameterSetConfigBlobEntity.class,
-    ConfigBlob.class
+    ConfigBlob.class,
     GitCodeBlobEntity.class,
     NotebookCodeBlobEntity.class,
     BranchEntity.class
