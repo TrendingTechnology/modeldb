@@ -1,6 +1,7 @@
 package ai.verta.modeldb.versioning;
 
-import ai.verta.modeldb.entities.BlobTreeInformation;
+import static ai.verta.modeldb.versioning.BlobDAORdbImpl.TREE;
+
 import ai.verta.modeldb.entities.versioning.InternalFolderElementEntity;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -11,30 +12,24 @@ import java.util.Map;
 import org.hibernate.Session;
 
 public class TreeElem {
-  String path;
-  String blobHash = null;
-  String type = null;
-  BlobTreeInformation blobTreeInformation;
-  Map<String, TreeElem> children = new HashMap<>();
+  private String path;
+  private String blobHash = null;
+  private String type = null;
+  private Map<String, TreeElem> children = new HashMap<>();
 
   TreeElem() {}
 
-  public TreeElem push(
-      List<String> pathList,
-      String blobHash,
-      String type,
-      BlobTreeInformation blobTreeInformation) {
+  public TreeElem push(List<String> pathList, String blobHash, String type) {
     path = pathList.get(0);
     if (pathList.size() > 1) {
       children.putIfAbsent(pathList.get(1), new TreeElem());
-      if (this.type == null) this.type = BlobDAORdbImpl.TREE;
+      if (this.type == null) this.type = TREE;
       return children
           .get(pathList.get(1))
-          .push(pathList.subList(1, pathList.size()), blobHash, type, blobTreeInformation);
+          .push(pathList.subList(1, pathList.size()), blobHash, type);
     } else {
       this.blobHash = blobHash;
       this.type = type;
-      this.blobTreeInformation = blobTreeInformation;
       return this;
     }
   }
@@ -51,10 +46,6 @@ public class TreeElem {
     return type;
   }
 
-  public BlobTreeInformation getBlobTreeInformation() {
-    return blobTreeInformation;
-  }
-
   InternalFolderElement saveFolders(Session session, FileHasher fileHasher)
       throws NoSuchAlgorithmException {
     if (children.isEmpty()) {
@@ -68,7 +59,7 @@ public class TreeElem {
       for (TreeElem elem : children.values()) {
         InternalFolderElement build = elem.saveFolders(session, fileHasher);
         elems.add(build);
-        if (elem.getType().equals(BlobDAORdbImpl.TREE)) {
+        if (elem.getType().equals(TREE)) {
           internalFolder.addSubFolders(build);
         } else {
           internalFolder.addBlobs(build);
@@ -82,46 +73,18 @@ public class TreeElem {
       Iterator<TreeElem> iter = children.values().iterator();
       for (InternalFolderElement elem : elems) {
         final TreeElem next = iter.next();
-        session.saveOrUpdate(
-            new ConnectionBuilder(
-                    elem, treeBuild.getElementSha(), next.getType(), next.getBlobTreeInformation())
-                .build());
+        InternalFolderElementEntity internalFolderElementEntity;
+        if (next.getType().equals(TREE)) {
+          internalFolderElementEntity =
+              new InternalFolderElementEntity(elem, treeBuild.getElementSha(), next.getType());
+        } else {
+          internalFolderElementEntity =
+              new InternalFolderElementEntity(
+                  treeBuild.getElementSha(), next.getBlobHash(), next.getType(), next.getPath());
+        }
+        session.saveOrUpdate(internalFolderElementEntity);
       }
       return treeBuild;
-    }
-  }
-
-  private class ConnectionBuilder {
-    private final InternalFolderElement elem;
-    private final String baseBlobHash;
-    private final String type;
-    private final BlobTreeInformation blobTreeInformation;
-
-    public ConnectionBuilder(
-        InternalFolderElement elem,
-        String folderHash,
-        String type,
-        BlobTreeInformation blobTreeInformation) {
-      this.elem = elem;
-      this.baseBlobHash = folderHash;
-      this.type = type;
-      this.blobTreeInformation = blobTreeInformation;
-    }
-
-    public Object build() {
-      if (blobTreeInformation != null) {
-        if (blobTreeInformation.hasComponents()) {
-          blobTreeInformation.setBaseBlobHash(baseBlobHash);
-          return blobTreeInformation;
-        } else {
-          return new InternalFolderElementEntity(
-              baseBlobHash,
-              blobTreeInformation.getElementSha(),
-              type,
-              blobTreeInformation.getElementName());
-        }
-      }
-      return new InternalFolderElementEntity(elem, baseBlobHash, type);
     }
   }
 }

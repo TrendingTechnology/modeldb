@@ -1,15 +1,14 @@
 package ai.verta.modeldb.versioning;
 
 import ai.verta.modeldb.ModelDBException;
-import ai.verta.modeldb.versioning.blob.BlobContainer;
+import ai.verta.modeldb.versioning.blob.container.BlobContainer;
 import com.google.protobuf.ProtocolStringList;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import org.hibernate.Session;
 
 interface DatasetComponentDAO {
 
-  String setBlobs(Session session, List<BlobContainer> blobsList, FileHasher fileHasher)
+  String setBlobs(List<BlobContainer> blobsList, FileHasher fileHasher)
       throws NoSuchAlgorithmException, ModelDBException;
 
   GetCommitComponentRequest.Response getCommitComponent(

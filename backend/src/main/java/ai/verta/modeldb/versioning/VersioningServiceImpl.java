@@ -12,7 +12,7 @@ import ai.verta.modeldb.utils.ModelDBUtils;
 import ai.verta.modeldb.versioning.ListRepositoriesRequest.Response;
 import ai.verta.modeldb.versioning.PathDatasetComponentBlob.Builder;
 import ai.verta.modeldb.versioning.VersioningServiceGrpc.VersioningServiceImplBase;
-import ai.verta.modeldb.versioning.blob.BlobContainer;
+import ai.verta.modeldb.versioning.blob.container.BlobContainer;
 import ai.verta.uac.UserInfo;
 import io.grpc.Status.Code;
 import io.grpc.stub.StreamObserver;
@@ -217,7 +217,7 @@ public class VersioningServiceImpl extends VersioningServiceImplBase {
           commitDAO.setCommit(
               authService.getVertaIdFromUserInfo(currentLoginUserInfo),
               request.getCommit(),
-              (session) -> datasetComponentDAO.setBlobs(session, blobContainers, fileHasher),
+              () -> datasetComponentDAO.setBlobs(blobContainers, fileHasher),
               (session) -> repositoryDAO.getRepositoryById(session, request.getRepositoryId()));
 
       responseObserver.onNext(response);
